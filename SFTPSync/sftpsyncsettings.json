@@ -1,0 +1,17 @@
+{
+  "StartAtLogin": true,
+  "StartInTray": true,
+  "AutoStartSync": true,
+  "AccessVerified": true,
+  "DeleteEnabled": false,
+  "LocalPath": "D:\\WINDEV\\WIN",
+  "LocalSearchPattern": "*.DBL;*.C;*.H;*.COM;*.BAS;*.NME;*.MAR;*.HDF;*.FDL;*.OPT;*.EXP;*.HDR;*.MMS;*.FORM;*.SCR;*.SCM;*.FDL",
+  "RemoteHost": "EMJDV1",
+  "RemoteUsername": "1Brian",
+  "RemotePath": "/DKC6/1Brian/synctest/win/",
+  "ExcludedDirectories": [
+    "D:\\WINDEV\\WIN\\EMJREL\\SRC\\REP\\deprecated",
+    "D:\\WINDEV\\WIN\\NOTES",
+    "D:\\WINDEV\\WIN\\WINDOWS"
+  ]
+}

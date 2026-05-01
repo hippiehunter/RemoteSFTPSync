@@ -1,6 +1,8 @@
 ﻿using Renci.SshNet;
 using Renci.SshNet.Sftp;
 using System.Collections.Concurrent;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SFTPSyncLib
 {
@@ -8,7 +10,7 @@ namespace SFTPSyncLib
     {
         string _host;
         string _username;
-        string _password;
+        string? _password;
         string _searchPattern;
         string _localRootDirectory;
         string _remoteRootDirectory;
@@ -29,9 +31,41 @@ namespace SFTPSyncLib
 
         public Task DoneInitialSync { get; }
 
-        public RemoteSync(string host, string username, string password,
+        private SftpClient GetSftpClient(string host, string username, string? password, string? identityFilePath = null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                var defPath = string.IsNullOrEmpty(identityFilePath);
+                if (defPath)
+                {
+                    identityFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.ssh/id_rsa";
+                }
+                if (!File.Exists(identityFilePath))
+                {
+                    string message;
+                    if (defPath)
+                    {
+                        message = "No password or identity key provided.";
+                    }
+                    else
+                    {
+                        message = $"No password provided and identity file not found at {identityFilePath}";
+                    }
+                    Logger.LogError(message);
+                    throw new InvalidOperationException(message);
+                }
+                var key = new Renci.SshNet.PrivateKeyFile(identityFilePath);    
+                return new SftpClient(host, username, key);
+            }
+            else
+            {
+                return new SftpClient(host, username, password);
+            }
+        }
+
+        public RemoteSync(string host, string username, string? password,
             string localRootDirectory, string remoteRootDirectory, 
-            string searchPattern, bool createFolders, SyncDirector director, List<string>? excludedFolders, bool deleteEnabled, bool handleDirectoryDeletes)
+            string searchPattern, bool createFolders, SyncDirector director, List<string>? excludedFolders, bool deleteEnabled, bool handleDirectoryDeletes, string? identityFile = null)
         {
             _host = host;
             _username = username;
@@ -42,8 +76,7 @@ namespace SFTPSyncLib
             _director = director;
             _excludedFolders = excludedFolders ?? new List<string>();
             _deleteEnabled = deleteEnabled;
-            _sftp = new SftpClient(host, username, password);
-
+            _sftp = GetSftpClient(host, username, password, identityFile);
             //The first instance is responsible for creating ALL of the the directories.
             //Subsequent instances will not be created until this one completes.
 
@@ -68,9 +101,9 @@ namespace SFTPSyncLib
             }
         }
 
-        public RemoteSync(string host, string username, string password,
+        public RemoteSync(string host, string username, string? password,
             string localRootDirectory, string remoteRootDirectory,
-            string searchPattern, SyncDirector director, List<string>? excludedFolders, Task initialSyncTask, bool deleteEnabled, bool handleDirectoryDeletes)
+            string searchPattern, SyncDirector director, List<string>? excludedFolders, Task initialSyncTask, bool deleteEnabled, bool handleDirectoryDeletes, string? identityFile = null)
         {
             _host = host;
             _username = username;
@@ -81,8 +114,7 @@ namespace SFTPSyncLib
             _director = director;
             _excludedFolders = excludedFolders ?? new List<string>();
             _deleteEnabled = deleteEnabled;
-            _sftp = new SftpClient(host, username, password);
-
+            _sftp = GetSftpClient(host, username, password, identityFile);
             DoneMakingFolders = Task.CompletedTask;
 
             DoneInitialSync = initialSyncTask;
@@ -160,7 +192,8 @@ namespace SFTPSyncLib
 
             await Task.WhenAll(workers);
         }
-
+        // regex to find \r\n at the end of a line
+        private static readonly Regex LineEndingRegex = new Regex(@"\r\n|\r|\n", RegexOptions.Compiled);
         /// <summary>
         /// Sync changes for a file. This is only used for changes AFTER the initial sync has completed.
         /// </summary>
@@ -189,9 +222,20 @@ namespace SFTPSyncLib
 
                     // Read the local file content
                     var localFileContent = File.ReadAllText(sourcePath);
-
-                    // Write the remote file
-                    sftp.WriteAllText(destinationPath, localFileContent);
+                    using var fs =  File.OpenRead(sourcePath);
+                    using var sr = new StreamReader(fs);
+                    var sb = new StringBuilder();
+                    if (sftp.Exists(destinationPath)) sftp.Delete(destinationPath);
+                    var sw = sftp.CreateText(destinationPath);
+                    string? line; 
+                    while((line = sr.ReadLine()) is not null)
+                    {
+                        sw.WriteLine(line.Replace("\r\n", "\n").Replace("\r", "\n"));
+                    }
+                    sw.Flush();
+                    sw.Close();
+                    sr.Close();
+                    fs.Close();
 
                     return;
                 }
