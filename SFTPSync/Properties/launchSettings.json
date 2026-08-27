@@ -2,7 +2,19 @@
   "profiles": {
     "RemoteSFTPSyncCore": {
       "commandName": "Project",
-      "commandLineArgs": "VMSIT reliance1 reliance1 C:\\WINDEV\\WIN /DISK$VMS84/RELIANCE1/WIN/ \"*.DBL;*.C;*.H;*.COM;*.BAS;*.NME;*.MAR;*.HDF;*.FDL;*.OPT;*.EXP;*.HDR;*.MMS;*.FORM;*.SCR\""
+      "commandLineArgs": "-h VMSIT -u reliance1 -l C:\\WINDEV\\WIN -r /DISK$VMS84/RELIANCE1/WIN/ -s \"*.DBL;*.C;*.H;*.COM;*.BAS;*.NME;*.MAR;*.HDF;*.FDL;*.OPT;*.EXP;*.HDR;*.MMS;*.FORM;*.SCR\" --password reliance1"
+    },
+    "RemoteSFTPSyncCoreBrian": {
+      "commandName": "Project",
+      "commandLineArgs": "--host EMJDV1 -u 1brian -l D:\\synctest -r /DKC6/1Brian/synctest/ -s \"*.DBL;*.C;*.H;*.COM;*.BAS;*.NME;*.MAR;*.HDF;*.FDL;*.OPT;*.EXP;*.HDR;*.MMS;*.FORM;*.SCR\" --one-time -i c:\\Users\\bshelledy\\.ssh\\id_rsa"
+    },
+    "RemoteSFTPSyncCoreEmpty": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    },
+    "RemoteSFTPSyncCoreConfig": {
+      "commandName": "Project",
+      "commandLineArgs": "--config sftpsyncsettings.json --one-time -i c:\\Users\\bshelledy\\.ssh\\id_rsa"
     }
   }
-}
+  }
