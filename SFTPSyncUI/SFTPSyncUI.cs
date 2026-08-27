@@ -301,6 +301,8 @@ namespace SFTPSyncUI
                         }
                     }
 
+                    director.Start();
+
                     var connectTasks = new List<Task>();
 
                     RemoteSync[] workerSnapshot;

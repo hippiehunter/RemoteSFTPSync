@@ -62,14 +62,8 @@ namespace SFTPSyncUI
                     setingsChanged = true;
                 }
 
-                foreach (string dir in settings.ExcludedDirectories)
-                {
-                    if (!Directory.Exists(dir))
-                    {
-                        settings.ExcludedDirectories.Remove(dir);
-                        setingsChanged = true;
-                    }
-                }
+                if (settings.ExcludedDirectories.RemoveAll(dir => !Directory.Exists(dir)) > 0)
+                    setingsChanged = true;
 
                 if (settings.AccessVerified &&
                     (string.IsNullOrWhiteSpace(settings.RemoteHost) ||

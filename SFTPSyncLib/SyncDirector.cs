@@ -39,7 +39,10 @@ namespace SFTPSyncLib
                 _fsw.Deleted += Fsw_Deleted;
             }
             _fsw.Error += Fsw_Error;
+        }
 
+        public void Start()
+        {
             _fsw.EnableRaisingEvents = true;
         }
 
