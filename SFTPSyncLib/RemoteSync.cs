@@ -364,7 +364,7 @@ namespace SFTPSyncLib
                     return item.Name.Remove(item.Name.IndexOf(".DIR", StringComparison.OrdinalIgnoreCase));
                 else
                     return item.Name;
-            });
+            }, StringComparer.OrdinalIgnoreCase);
 
             foreach (var item in localDirectories)
             {
@@ -740,6 +740,14 @@ namespace SFTPSyncLib
 
                 var oldRemotePath = GetRemotePathForLocal(arg.OldFullPath);
                 var newRemotePath = GetRemotePathForLocal(arg.FullPath);
+
+                // OpenVMS directory names preserve case but are case-insensitive. A case-only
+                // local rename therefore refers to the same remote directory and needs no action.
+                if (string.Equals(oldRemotePath, newRemotePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogInfo($"Ignoring case-only directory rename: {oldRemotePath} -> {newRemotePath}");
+                    return;
+                }
 
                 await _sftpLock.WaitAsync();
                 try
